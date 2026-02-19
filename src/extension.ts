@@ -3,15 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import {
-	type ExtensionContext,
-	type LogOutputChannel,
-	ThemeIcon,
-	chat,
-	commands,
-	window,
-	workspace,
-} from 'vscode';
+import * as vscode from 'vscode';
 import { SlackBot } from './slackBot';
 import { ChatBridge } from './chatBridge';
 import { ConversationManager } from './conversationManager';
@@ -20,8 +12,8 @@ import { createSlackParticipantHandler, PARTICIPANT_ID } from './slackParticipan
 
 let currentBot: SlackBot | undefined;
 
-export async function activate(context: ExtensionContext) {
-	const outputChannel = window.createOutputChannel('Slack Bot', { log: true });
+export async function activate(context: vscode.ExtensionContext) {
+	const outputChannel = vscode.window.createOutputChannel('Slack Bot', { log: true });
 	context.subscriptions.push(outputChannel);
 
 	const statusBar = new BotStatusBar();
@@ -37,26 +29,26 @@ export async function activate(context: ExtensionContext) {
 		() => currentBot,
 	);
 
-	const chatParticipant = chat.createChatParticipant(PARTICIPANT_ID, participantHandler);
-	chatParticipant.iconPath = new ThemeIcon('comment-discussion');
+	const chatParticipant = vscode.chat.createChatParticipant(PARTICIPANT_ID, participantHandler);
+	chatParticipant.iconPath = new vscode.ThemeIcon('comment-discussion');
 	context.subscriptions.push(chatParticipant);
 
 	context.subscriptions.push(
-		commands.registerCommand('vscode-slack-bot.start', async () => {
+		vscode.commands.registerCommand('vscode-slack-bot.start', async () => {
 			await startBot(context, outputChannel, statusBar);
 		}),
-		commands.registerCommand('vscode-slack-bot.stop', async () => {
+		vscode.commands.registerCommand('vscode-slack-bot.stop', async () => {
 			await stopBot(outputChannel, statusBar);
 		}),
-		commands.registerCommand('vscode-slack-bot.configure', async () => {
+		vscode.commands.registerCommand('vscode-slack-bot.configure', async () => {
 			await configureTokens(context, outputChannel);
 		}),
-		commands.registerCommand('vscode-slack-bot.showLogs', () => {
+		vscode.commands.registerCommand('vscode-slack-bot.showLogs', () => {
 			outputChannel.show();
 		}),
 	);
 
-	if (workspace.getConfiguration('vscode-slack-bot').get<boolean>('autoStart')) {
+	if (vscode.workspace.getConfiguration('vscode-slack-bot').get<boolean>('autoStart')) {
 		await startBot(context, outputChannel, statusBar);
 	}
 }
@@ -69,8 +61,8 @@ export async function deactivate() {
 }
 
 async function startBot(
-	context: ExtensionContext,
-	outputChannel: LogOutputChannel,
+	context: vscode.ExtensionContext,
+	outputChannel: vscode.LogOutputChannel,
 	statusBar: BotStatusBar,
 ) {
 	const [botToken, appToken] = await Promise.all([
@@ -79,12 +71,12 @@ async function startBot(
 	]);
 
 	if (!botToken || !appToken) {
-		const action = await window.showErrorMessage(
+		const action = await vscode.window.showErrorMessage(
 			'Slack Bot tokens are not configured. Please configure them first.',
 			'Configure Tokens',
 		);
 		if (action === 'Configure Tokens') {
-			await commands.executeCommand('vscode-slack-bot.configure');
+			await vscode.commands.executeCommand('vscode-slack-bot.configure');
 		}
 		return;
 	}
@@ -99,10 +91,10 @@ async function startBot(
 		await bot.start();
 		currentBot = bot;
 		statusBar.setRunning(true);
-		window.showInformationMessage('Slack Bot started — listening for messages via Socket Mode.');
+		vscode.window.showInformationMessage('Slack Bot started — listening for messages via Socket Mode.');
 	} catch (err) {
 		outputChannel.error(`Failed to start Slack bot: ${err}`);
-		window.showErrorMessage(
+		vscode.window.showErrorMessage(
 			`Failed to start Slack Bot: ${err instanceof Error ? err.message : err}`,
 			'Show Logs',
 		).then(action => {
@@ -115,11 +107,11 @@ async function startBot(
 }
 
 async function stopBot(
-	outputChannel: LogOutputChannel,
+	outputChannel: vscode.LogOutputChannel,
 	statusBar: BotStatusBar,
 ) {
 	if (!currentBot) {
-		window.showInformationMessage('Slack Bot is not running.');
+		vscode.window.showInformationMessage('Slack Bot is not running.');
 		return;
 	}
 	try {
@@ -129,14 +121,14 @@ async function stopBot(
 	}
 	currentBot = undefined;
 	statusBar.setRunning(false);
-	window.showInformationMessage('Slack Bot stopped.');
+	vscode.window.showInformationMessage('Slack Bot stopped.');
 }
 
 async function configureTokens(
-	context: ExtensionContext,
-	outputChannel: LogOutputChannel,
+	context: vscode.ExtensionContext,
+	outputChannel: vscode.LogOutputChannel,
 ) {
-	const botToken = await window.showInputBox({
+	const botToken = await vscode.window.showInputBox({
 		title: 'Slack Bot Token (1/2)',
 		prompt: 'Enter your Slack Bot User OAuth Token (starts with xoxb-)',
 		password: true,
@@ -148,7 +140,7 @@ async function configureTokens(
 		return;
 	}
 
-	const appToken = await window.showInputBox({
+	const appToken = await vscode.window.showInputBox({
 		title: 'Slack App-Level Token (2/2)',
 		prompt: 'Enter your Slack App-Level Token for Socket Mode (starts with xapp-)',
 		password: true,
@@ -166,11 +158,11 @@ async function configureTokens(
 	]);
 
 	outputChannel.info('Tokens stored securely in VS Code SecretStorage.');
-	const action = await window.showInformationMessage(
+	const action = await vscode.window.showInformationMessage(
 		'Slack Bot tokens saved. Would you like to start the bot now?',
 		'Start Bot',
 	);
 	if (action === 'Start Bot') {
-		await commands.executeCommand('vscode-slack-bot.start');
+		await vscode.commands.executeCommand('vscode-slack-bot.start');
 	}
 }

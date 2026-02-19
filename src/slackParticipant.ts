@@ -3,16 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import {
-	type CancellationToken,
-	type ChatContext,
-	type ChatRequest,
-	type ChatRequestHandler,
-	type ChatResponseStream,
-	type ChatResult,
-	type LogOutputChannel,
-	workspace,
-} from 'vscode';
+import * as vscode from 'vscode';
 import { ChatBridge } from './chatBridge';
 import { ConversationManager } from './conversationManager';
 import type { SlackBot } from './slackBot';
@@ -45,15 +36,15 @@ export function setPendingThread(thread: PendingThread) {
 export function createSlackParticipantHandler(
 	chatBridge: ChatBridge,
 	conversationManager: ConversationManager,
-	outputChannel: LogOutputChannel,
+	outputChannel: vscode.LogOutputChannel,
 	getBot: () => SlackBot | undefined,
-): ChatRequestHandler {
+): vscode.ChatRequestHandler {
 	return async (
-		request: ChatRequest,
-		_context: ChatContext,
-		stream: ChatResponseStream,
-		token: CancellationToken,
-	): Promise<ChatResult> => {
+		request: vscode.ChatRequest,
+		_context: vscode.ChatContext,
+		stream: vscode.ChatResponseStream,
+		token: vscode.CancellationToken,
+	): Promise<vscode.ChatResult> => {
 		const prompt = request.prompt.trim();
 		const thread = pendingThread;
 		pendingThread = undefined;
@@ -69,7 +60,7 @@ export function createSlackParticipantHandler(
 
 		const { channelId, threadTs } = thread;
 
-		const systemPrompt = workspace
+		const systemPrompt = vscode.workspace
 			.getConfiguration('vscode-slack-bot')
 			.get<string>('systemPrompt', '');
 

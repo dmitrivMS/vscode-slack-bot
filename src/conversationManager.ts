@@ -3,12 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import {
-	type LanguageModelChatMessage,
-	LanguageModelChatMessage as LMChatMessage,
-	LanguageModelChatMessageRole,
-	workspace,
-} from 'vscode';
+import * as vscode from 'vscode';
 
 /**
  * One conversation session corresponding to a single Slack thread.
@@ -17,7 +12,7 @@ import {
 export interface ConversationSession {
 	readonly channelId: string;
 	readonly threadTs: string;
-	readonly messages: LanguageModelChatMessage[];
+	readonly messages: vscode.LanguageModelChatMessage[];
 	readonly startedAt: Date;
 	lastActivityAt: Date;
 }
@@ -39,10 +34,10 @@ export class ConversationManager {
 	getOrCreate(channelId: string, threadTs: string, systemPrompt?: string): ConversationSession {
 		const k = ConversationManager.key(channelId, threadTs);
 		if (!this.sessions.has(k)) {
-			const messages: LanguageModelChatMessage[] = [];
+			const messages: vscode.LanguageModelChatMessage[] = [];
 			if (systemPrompt) {
-				messages.push(LMChatMessage.User(systemPrompt));
-				messages.push(LMChatMessage.Assistant('Understood. I am ready to help.'));
+				messages.push(vscode.LanguageModelChatMessage.User(systemPrompt));
+				messages.push(vscode.LanguageModelChatMessage.Assistant('Understood. I am ready to help.'));
 			}
 			this.sessions.set(k, {
 				channelId,
@@ -58,22 +53,22 @@ export class ConversationManager {
 	}
 
 	addUser(session: ConversationSession, text: string) {
-		session.messages.push(LMChatMessage.User(text));
+		session.messages.push(vscode.LanguageModelChatMessage.User(text));
 		session.lastActivityAt = new Date();
 		this.trim(session);
 	}
 
 	addAssistant(session: ConversationSession, text: string) {
-		session.messages.push(LMChatMessage.Assistant(text));
+		session.messages.push(vscode.LanguageModelChatMessage.Assistant(text));
 		session.lastActivityAt = new Date();
 	}
 
 	private trim(session: ConversationSession) {
-		const maxMessages = workspace
+		const maxMessages = vscode.workspace
 			.getConfiguration('vscode-slack-bot')
 			.get<number>('maxHistoryMessages', 20);
-		const prologue = session.messages[0]?.role === LanguageModelChatMessageRole.User &&
-			session.messages[1]?.role === LanguageModelChatMessageRole.Assistant ? 2 : 0;
+		const prologue = session.messages[0]?.role === vscode.LanguageModelChatMessageRole.User &&
+			session.messages[1]?.role === vscode.LanguageModelChatMessageRole.Assistant ? 2 : 0;
 		while (session.messages.length > maxMessages + prologue) {
 			session.messages.splice(prologue, 1);
 		}

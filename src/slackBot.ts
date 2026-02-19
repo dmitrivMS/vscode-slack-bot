@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { type LogOutputChannel, commands } from 'vscode';
+import * as vscode from 'vscode';
 import { App, LogLevel } from '@slack/bolt';
 import { PARTICIPANT_NAME, setPendingThread } from './slackParticipant';
 
@@ -31,7 +31,7 @@ export class SlackBot {
 	constructor(
 		botToken: string,
 		appToken: string,
-		private readonly outputChannel: LogOutputChannel,
+		private readonly outputChannel: vscode.LogOutputChannel,
 	) {
 		this.app = new App({
 			token: botToken,
@@ -129,7 +129,7 @@ export class SlackBot {
 		setPendingThread({ channelId, threadTs });
 
 		try {
-			await commands.executeCommand('workbench.action.chat.open', {
+			await vscode.commands.executeCommand('workbench.action.chat.open', {
 				query: `@${PARTICIPANT_NAME} ${userText}`,
 				mode: 'agent',
 			});
